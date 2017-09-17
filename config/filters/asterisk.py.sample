@@ -1,0 +1,17 @@
+from bandit.generic_filters import timestamped_deriv_filter
+import re
+
+ASTERISK_RE = re.compile(r'InvalidPassword.+RemoteAddress="[^/]+/[^/]+/([^/]+)/')
+
+def asterisk_deriv(line):
+    m = ASTERISK_RE.search(line)
+    if m:
+        return m.group(1)
+
+filters = {
+    'asterisk': {
+        'files': ['/var/log/asterisk/security', '/var/log/asterisk/test'],
+        'deriv': timestamped_deriv_filter(asterisk_deriv)
+    }
+}
+

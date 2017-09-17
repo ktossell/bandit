@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+import argparse
+import glob
+import importlib.machinery
+import os
+
+import bandit.bandit
+
+parser = argparse.ArgumentParser(
+    description='Watch log files, identifying and stopping brute-force attacks using iptables')
+parser.add_argument('--config', '-c', type=str)
+args = parser.parse_args()
+
+config_dir = args.config or '/etc/bandit'
+
+filters = {}
+for mod_path in glob.glob(os.path.join(config_dir, 'filters', '*.py')):
+    root, filename = os.path.split(mod_path)
+    modname = filename.rstrip(".py")
+    print("Loading filter '{}'".format(modname))
+
+    spec = importlib.machinery.PathFinder.find_spec(modname, path=[root])
+    mod = spec.loader.load_module()
+
+    filters.update(mod.filters)
+
+runner = bandit.bandit.Bandit(filters=filters, ban_handler=bandit.bandit.ban_ip)
+runner.run()
+
